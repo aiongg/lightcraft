@@ -10,9 +10,9 @@ rust-version = "1.90"
 repository = "https://github.com/storytold/lightcraft"
 
 [workspace.dependencies]
-craft-ui = { git = "https://github.com/aiongg/craft-libs", rev = "0554adcd61fe40252e9555e61c3c60b55b4c97ae", features = ["serde"] }
-craft-docpath = { version = "0.1.0", git = "https://github.com/aiongg/craft-libs", rev = "0554adcd61fe40252e9555e61c3c60b55b4c97ae" }
-craft-fonts-build = { version = "0.1.0", git = "https://github.com/aiongg/craft-libs", rev = "0554adcd61fe40252e9555e61c3c60b55b4c97ae" }
+craft-ui = { git = "https://github.com/aiongg/craft-libs", rev = "7fc94afd0a925e57b84dc7650a1ef6e7ab68294c", features = ["serde"] }
+craft-docpath = { version = "0.1.0", git = "https://github.com/aiongg/craft-libs", rev = "7fc94afd0a925e57b84dc7650a1ef6e7ab68294c" }
+craft-fonts-build = { version = "0.1.0", git = "https://github.com/aiongg/craft-libs", rev = "7fc94afd0a925e57b84dc7650a1ef6e7ab68294c" }
 # internal
 lightcraft-denoise-core = { path = "crates/denoise-core" }
 lightcraft-denoise = { path = "crates/denoise", default-features = false }
@@ -113,16 +113,16 @@ web-sys = "0.3"
 
 # The suite's patched toolkit (bidi, IME and platform fixes on egui 0.37 / winit 0.30).
 [patch.crates-io]
-ecolor = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
-eframe = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
-egui = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
-egui-wgpu = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
-egui-winit = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
-egui_glow = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
-egui_kittest = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
-emath = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
-epaint = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
-epaint_default_fonts = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+ecolor = { git = "https://github.com/aiongg/egui", rev = "a4f9a17f64a6bae61350fb85804c9df0d9865916" }
+eframe = { git = "https://github.com/aiongg/egui", rev = "a4f9a17f64a6bae61350fb85804c9df0d9865916" }
+egui = { git = "https://github.com/aiongg/egui", rev = "a4f9a17f64a6bae61350fb85804c9df0d9865916" }
+egui-wgpu = { git = "https://github.com/aiongg/egui", rev = "a4f9a17f64a6bae61350fb85804c9df0d9865916" }
+egui-winit = { git = "https://github.com/aiongg/egui", rev = "a4f9a17f64a6bae61350fb85804c9df0d9865916" }
+egui_glow = { git = "https://github.com/aiongg/egui", rev = "a4f9a17f64a6bae61350fb85804c9df0d9865916" }
+egui_kittest = { git = "https://github.com/aiongg/egui", rev = "a4f9a17f64a6bae61350fb85804c9df0d9865916" }
+emath = { git = "https://github.com/aiongg/egui", rev = "a4f9a17f64a6bae61350fb85804c9df0d9865916" }
+epaint = { git = "https://github.com/aiongg/egui", rev = "a4f9a17f64a6bae61350fb85804c9df0d9865916" }
+epaint_default_fonts = { git = "https://github.com/aiongg/egui", rev = "a4f9a17f64a6bae61350fb85804c9df0d9865916" }
 winit = { git = "https://github.com/aiongg/winit", rev = "8b35388bd719e8cc86a95971ba0bc026c9a8f058" }
 
 [workspace.lints.rust]
