@@ -513,4 +513,35 @@ mod tests {
         let (strong, _) = width_and_ink(&ctx, "Library", semibold_family());
         assert!(strong > regular, "strong Latin stays wider than regular: {strong} px, {regular} px");
     }
+
+    /// Characters no catalog has, typed into a text field: a rare Han character (the interface cuts
+    /// lack it, so without installed fonts it is a missing glyph), a Vietnamese letter and a
+    /// keyboard symbol. Nothing panics, and with craft-fonts the embedded faces draw the last two
+    /// (Noto Sans, the symbol faces).
+    #[test]
+    fn characters_outside_the_catalogs_type_into_a_text_field() {
+        use egui_kittest::kittest::Queryable as _;
+        let typed = "\u{2A6A5}ẫ⌘";
+        let mut harness = egui_kittest::Harness::new_ui_state(
+            |ui, text: &mut String| {
+                crate::text_field::TextField::singleline("outside-catalogs", text).label("Name").show(ui);
+            },
+            String::new(),
+        );
+        font_stack(Locale::En, SystemFonts::Off).install(&harness.ctx);
+        harness.ctx.set_missing_glyph_policy(egui::MissingGlyphPolicy::Tofu);
+        harness.run();
+        harness.get_by_label("Name").focus();
+        harness.run();
+        harness.get_by_label("Name").type_text(typed);
+        harness.run();
+        assert_eq!(harness.state(), typed);
+        if craft_faces().is_empty() {
+            lightcraft_testkit::skip!(Fonts, "glyph check: built without CRAFT_FONTS_DIR");
+            return;
+        }
+        let font = FontId::proportional(13.0);
+        let drawn: Vec<char> = typed.chars().filter(|c| harness.ctx.fonts_mut(|f| f.has_glyph(&font, *c))).collect();
+        assert!(drawn.contains(&'ẫ') && drawn.contains(&'⌘'), "{drawn:?}");
+    }
 }
