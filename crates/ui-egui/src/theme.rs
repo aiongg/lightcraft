@@ -268,7 +268,7 @@ static UI_FACES: &[EmbeddedFace] = include!(concat!(env!("OUT_DIR"), "/ui_faces.
 const EMOJI: &str = "Zsye";
 
 fn has_script(face: &CraftFace, script: &str) -> bool {
-    face.scripts.iter().any(|s| *s == script)
+    face.scripts.contains(&script)
 }
 
 /// Whether the face is for Chinese, Japanese or Korean (`Hant-HK` included).
