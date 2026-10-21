@@ -824,24 +824,29 @@ fn soft_proofing(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
             });
         });
         ui.horizontal(|ui| {
-            ui.label(RichText::new(crate::i18n::tr("Profile:")).color(t.text_label));
+            let profile = ui.label(RichText::new(crate::i18n::tr("Profile:")).color(t.text_label));
             let cur = app.ui.proof.space;
             let device = app.ui.proof_profile.as_ref().map(|(_, n)| n.clone());
             let shown = device.clone().unwrap_or_else(|| cur.label().to_string());
             let mut pick = false;
-            crate::widgets::combo_box("proof-space").width(170.0).selected_text(shown).show_ui(ui, |ui| {
-                for s in OutputSpace::ALL {
-                    if ui.selectable_label(device.is_none() && cur == s, s.label()).clicked() {
-                        let _ = app.run("view.softProof", json!({"space": s}));
+            crate::widgets::combo_box("proof-space")
+                .width(170.0)
+                .selected_text(shown)
+                .show_ui(ui, |ui| {
+                    for s in OutputSpace::ALL {
+                        if ui.selectable_label(device.is_none() && cur == s, s.label()).clicked() {
+                            let _ = app.run("view.softProof", json!({"space": s}));
+                        }
                     }
-                }
-                if let Some(n) = &device {
-                    let _ = ui.selectable_label(true, n);
-                }
-                if app.services.pick_display_profile.is_some() && ui.selectable_label(false, crate::i18n::tr("Other…")).clicked() {
-                    pick = true;
-                }
-            });
+                    if let Some(n) = &device {
+                        let _ = ui.selectable_label(true, n);
+                    }
+                    if app.services.pick_display_profile.is_some() && ui.selectable_label(false, crate::i18n::tr("Other…")).clicked() {
+                        pick = true;
+                    }
+                })
+                .response
+                .labelled_by(profile.id);
             if pick
                 && let Some(path) = app.services.pick_display_profile.as_mut().and_then(|pick| pick().into_iter().next())
                 && let Err(e) = app.run("view.softProof", json!({"profile": path}))

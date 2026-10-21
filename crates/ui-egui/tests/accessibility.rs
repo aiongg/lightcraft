@@ -249,3 +249,14 @@ fn tab_walks_the_right_panels_top_to_bottom() {
         }
     }
 }
+
+/// A combo box shows its value: a screen reader names it by the label drawn beside it.
+#[test]
+fn combo_boxes_are_named_by_their_visible_labels() {
+    for (right, label) in [(RightPanel::Info, "Copyright Status"), (RightPanel::Keywords, "Keyword Set")] {
+        let h = harness(ViewMode::Detail, right);
+        let named =
+            h.root().children_recursive().map(|n| n.accesskit_node()).any(|n| n.role() == Role::ComboBox && n.label().as_deref() == Some(label));
+        assert!(named, "{right:?}: no combo box named {label:?}");
+    }
+}

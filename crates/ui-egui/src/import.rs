@@ -1568,11 +1568,13 @@ fn inspect_sources(sources: &[String]) -> SourceSummary {
 fn field<R>(ui: &mut egui::Ui, label: &str, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
     let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
-        ui.allocate_ui_with_layout(vec2(78.0, 24.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.set_min_width(78.0);
-            ui.label(egui::RichText::new(crate::i18n::tr(label)).color(t.text_label));
-        });
-        add(ui)
+        let label = ui
+            .allocate_ui_with_layout(vec2(78.0, 24.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                ui.set_min_width(78.0);
+                ui.label(egui::RichText::new(crate::i18n::tr(label)).color(t.text_label))
+            })
+            .inner;
+        ui.label_inputs_by(label.id, add)
     })
     .inner
 }

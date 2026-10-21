@@ -69,11 +69,13 @@ pub(super) fn heading(ui: &mut egui::Ui, t: &Tokens, text: &str) {
 
 pub(super) fn row<R>(ui: &mut egui::Ui, t: &Tokens, label: &str, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
     ui.horizontal(|ui| {
-        ui.allocate_ui_with_layout(egui::vec2(LABEL_W, 24.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.set_min_width(LABEL_W);
-            ui.label(RichText::new(crate::i18n::tr(label)).color(t.text_label));
-        });
-        add(ui)
+        let label = ui
+            .allocate_ui_with_layout(egui::vec2(LABEL_W, 24.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                ui.set_min_width(LABEL_W);
+                ui.label(RichText::new(crate::i18n::tr(label)).color(t.text_label))
+            })
+            .inner;
+        ui.label_inputs_by(label.id, add)
     })
     .inner
 }

@@ -75,10 +75,12 @@ fn heading(ui: &mut Ui, t: &Tokens, text: &str) {
 
 fn row<R>(ui: &mut Ui, t: &Tokens, label: &str, add: impl FnOnce(&mut Ui) -> R) -> R {
     ui.horizontal(|ui| {
-        ui.allocate_ui_with_layout(vec2(86.0, 22.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.label(egui::RichText::new(crate::i18n::tr(label)).color(t.text_label));
-        });
-        add(ui)
+        let label = ui
+            .allocate_ui_with_layout(vec2(86.0, 22.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                ui.label(egui::RichText::new(crate::i18n::tr(label)).color(t.text_label))
+            })
+            .inner;
+        ui.label_inputs_by(label.id, add)
     })
     .inner
 }

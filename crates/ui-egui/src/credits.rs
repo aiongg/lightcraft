@@ -239,15 +239,19 @@ pub fn contributors_ui(app: &mut LightcraftApp, ui: &mut egui::Ui) {
             }
         }
         ui.separator();
-        ui.label(crate::i18n::tr("Sort"));
-        crate::widgets::combo_box("credits_sort").selected_text(crate::i18n::tr(v.key.label().0)).show_ui(ui, |ui| {
-            for k in SortKey::ALL {
-                if ui.selectable_label(v.key == k, crate::i18n::tr(k.label().0)).clicked() {
-                    v.key = k;
-                    v.ascending = k.default_ascending();
+        let sort = ui.label(crate::i18n::tr("Sort"));
+        crate::widgets::combo_box("credits_sort")
+            .selected_text(crate::i18n::tr(v.key.label().0))
+            .show_ui(ui, |ui| {
+                for k in SortKey::ALL {
+                    if ui.selectable_label(v.key == k, crate::i18n::tr(k.label().0)).clicked() {
+                        v.key = k;
+                        v.ascending = k.default_ascending();
+                    }
                 }
-            }
-        });
+            })
+            .response
+            .labelled_by(sort.id);
         let reverse =
             crate::widgets::arrow_button(ui, "", if v.ascending { crate::icons::Icon::ChevronUp } else { crate::icons::Icon::ChevronDown }, false);
         reverse.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, ui.is_enabled(), crate::i18n::tr("Reverse the order")));

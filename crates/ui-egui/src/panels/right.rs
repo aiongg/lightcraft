@@ -896,7 +896,7 @@ fn human_size(bytes: u64) -> String {
 /// Copyright Status: Unknown / Copyrighted / Public Domain (`xmpRights:Marked`).
 fn copyright_status(app: &mut LightcraftApp, ui: &mut egui::Ui, current: lightcraft_catalog::CopyrightStatus) {
     let t = Tokens::get(ui.ctx());
-    ui.label(egui::RichText::new(crate::i18n::tr("Copyright Status")).size(11.5).color(t.text_dim));
+    let label = ui.label(egui::RichText::new(crate::i18n::tr("Copyright Status")).size(11.5).color(t.text_dim));
     let r = crate::widgets::combo_box("info-copyright-status").selected_text(crate::i18n::tr(current.label())).show_ui(ui, |ui| {
         for st in lightcraft_catalog::CopyrightStatus::ALL {
             if ui.selectable_label(st == current, crate::i18n::tr(st.label())).clicked() && st != current {
@@ -904,7 +904,8 @@ fn copyright_status(app: &mut LightcraftApp, ui: &mut egui::Ui, current: lightcr
             }
         }
     });
-    register(ui.ctx(), "field:copyrightStatus", r.response.rect);
+    let r = r.response.labelled_by(label.id);
+    register(ui.ctx(), "field:copyrightStatus", r.rect);
     ui.add_space(6.0);
 }
 
@@ -1166,7 +1167,7 @@ fn keyword_set(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     let sets = lightcraft_engine::cmd::keywords::keyword_sets_json(&app.session);
     let current = sets["current"].as_str().unwrap_or_default().to_string();
     ui.horizontal(|ui| {
-        ui.label(egui::RichText::new(crate::i18n::tr("Keyword Set")).color(t.text_dim));
+        let label = ui.label(egui::RichText::new(crate::i18n::tr("Keyword Set")).color(t.text_dim));
         let combo = crate::widgets::combo_box("kw-set")
             .selected_text(crate::i18n::builtin_label(&current, current == lightcraft_engine::cmd::keywords::RECENT))
             .show_ui(ui, |ui| {
@@ -1211,7 +1212,8 @@ fn keyword_set(app: &mut LightcraftApp, ui: &mut egui::Ui) {
                     let _ = app.run("keyword.deleteSet", json!({"name": current}));
                 }
             });
-        register(ui.ctx(), "keywordSetCombo", combo.response.rect);
+        let combo = combo.response.labelled_by(label.id);
+        register(ui.ctx(), "keywordSetCombo", combo.rect);
     });
     let kws: Vec<String> = sets["keywords"].as_array().into_iter().flatten().filter_map(|k| k.as_str().map(str::to_string)).collect();
     if kws.is_empty() {

@@ -263,7 +263,8 @@ fn field_menu(ui: &mut egui::Ui, salt: &str, field: &mut String, op: &mut String
         }
         pick
     });
-    register(ui.ctx(), format!("ruleField:{salt}"), r.response.rect);
+    let response = r.response.accessible_name(crate::i18n::tr("Rule field"));
+    register(ui.ctx(), format!("ruleField:{salt}"), response.rect);
     let Some(Some(id)) = r.inner else { return };
     if field == id {
         return;
@@ -290,8 +291,8 @@ fn problem_note(ui: &mut egui::Ui, problem: Option<&Problem>, salt: &str) {
 pub fn edit(ui: &mut egui::Ui, rs: &mut RuleSet, salt: &str, depth: usize, path: &[usize], env: &Env) {
     let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
-        ui.label(RichText::new(crate::i18n::tr("Match")).color(t.text_label));
-        match_combo(ui, salt, &mut rs.mode);
+        let label = ui.label(RichText::new(crate::i18n::tr("Match")).color(t.text_label));
+        ui.label_inputs_by(label.id, |ui| match_combo(ui, salt, &mut rs.mode));
         ui.label(RichText::new(crate::i18n::tr("of the following rules:")).color(t.text_label));
     });
     let mut remove = None;
@@ -317,18 +318,22 @@ pub fn edit(ui: &mut egui::Ui, rs: &mut RuleSet, salt: &str, depth: usize, path:
                     field_menu(ui, &rsalt, field, op, value);
                     let kind = field_kind(field).unwrap_or(Kind::Text);
                     let op_label = ops_for(kind).iter().find(|o| o.0 == op.as_str()).map_or(op.as_str(), |o| o.1).to_string();
-                    crate::widgets::combo_box(format!("{rsalt}-op")).width(110.0).selected_text(crate::i18n::tr(&op_label)).show_ui(ui, |ui| {
-                        for (id, l) in ops_for(kind) {
-                            if ui.selectable_label(op == id, crate::i18n::tr(l)).clicked() && op != id {
-                                let was_special = matches!(op.as_str(), "between" | "inLast" | "notInLast" | "isEmpty" | "isNotEmpty");
-                                *op = id.to_string();
-                                if was_special || matches!(*id, "between" | "inLast" | "notInLast" | "isEmpty" | "isNotEmpty") {
-                                    *value = default_value(field, op);
+                    // the condition and the value have no label of their own: they are the field's
+                    let name = crate::i18n::tr(field_label(field).unwrap_or(field.as_str())).to_string();
+                    ui.name_inputs(name, |ui| {
+                        crate::widgets::combo_box(format!("{rsalt}-op")).width(110.0).selected_text(crate::i18n::tr(&op_label)).show_ui(ui, |ui| {
+                            for (id, l) in ops_for(kind) {
+                                if ui.selectable_label(op == id, crate::i18n::tr(l)).clicked() && op != id {
+                                    let was_special = matches!(op.as_str(), "between" | "inLast" | "notInLast" | "isEmpty" | "isNotEmpty");
+                                    *op = id.to_string();
+                                    if was_special || matches!(*id, "between" | "inLast" | "notInLast" | "isEmpty" | "isNotEmpty") {
+                                        *value = default_value(field, op);
+                                    }
                                 }
                             }
-                        }
+                        });
+                        value_editor(ui, field, op, value, &rsalt, env);
                     });
-                    value_editor(ui, field, op, value, &rsalt, env);
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let add = ui.small_button("+").on_hover_text(crate::i18n::tr("Add a rule (⌥-click: a group)"));
                         register(ui.ctx(), format!("button:ruleAdd-{rsalt}"), add.rect);
