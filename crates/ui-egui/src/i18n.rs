@@ -724,47 +724,28 @@ mod tests {
         assert_eq!(tr_format!("Reading photos… {} of {}", 3, 10), "Reading photos… 3 of 10");
     }
 
-    /// Every character a catalog paints has a glyph in the fonts the UI installs, so a translation
-    /// never shows as boxes. Without craft-fonts there are no CJK faces at all, and the CJK
-    /// catalogs are skipped (the same degradation the Japanese UI has always had).
+    /// Every character a catalog paints has a glyph in the fonts the UI installs without installed
+    /// fonts, so a translation never shows as boxes. Without craft-fonts there are no CJK or
+    /// Georgian faces at all, and those catalogs are skipped.
     #[test]
     fn catalog_characters_are_paintable() {
-        let ctx = egui::Context::default();
-        ctx.set_fonts(crate::theme::font_definitions(lightcraft_engine::CRAFT_FONTS));
-        let mut out = ctx.run_ui(egui::RawInput::default(), |_| {});
-        out.textures_delta.clear();
+        use craft_ui::fonts::{Sample, SystemFonts, missing_glyphs};
         for language in Locale::ALL {
             let messages = language.catalog();
             if messages.is_empty() {
                 continue;
             }
-            // The faces this language's script needs; a language the craft-fonts input does not
-            // cover (a translation added ahead of its font) is reported, not failed.
-            let mut faces: Vec<&str> =
-                lightcraft_engine::CRAFT_FONTS.iter().filter(|font| font.serves(language.script())).map(|font| font.family).collect();
-            faces.dedup();
-            if faces.is_empty() {
-                lightcraft_testkit::skip!(Fonts, "{}: built without a craft-fonts face for {}", language.code(), language.script());
+            if !matches!(language.script(), "Latn" | "Cyrl") && crate::theme::craft_faces().is_empty() {
+                lightcraft_testkit::skip!(Fonts, "{}: built without craft-fonts faces for {}", language.code(), language.script());
                 continue;
             }
-            ctx.fonts_mut(|fonts| {
-                for family in [egui::FontFamily::Proportional, egui::FontFamily::Name(crate::theme::FONT_SEMIBOLD.into())] {
-                    let font = egui::FontId::new(13.0, family.clone());
-                    let mut missing: Vec<char> = messages
-                        .values()
-                        .flat_map(|message| message.chars())
-                        .filter(|ch| !ch.is_whitespace() && !fonts.has_glyph(&font, *ch))
-                        .collect();
-                    missing.sort_unstable();
-                    missing.dedup();
-                    assert!(
-                        missing.is_empty(),
-                        "{} in {family:?} (faces: {faces:?}) lack glyphs: {}",
-                        language.code(),
-                        missing.iter().collect::<String>()
-                    );
-                }
-            });
+            let stack = crate::theme::font_stack(*language, SystemFonts::Off);
+            for family in [egui::FontFamily::Proportional, egui::FontFamily::Name(crate::theme::FONT_SEMIBOLD.into())] {
+                let samples = messages.iter().map(|(key, text)| Sample { language: language.code(), key, text });
+                let missing = missing_glyphs(&stack, &family, samples, false);
+                let listed: Vec<String> = missing.iter().map(ToString::to_string).collect();
+                assert!(missing.is_empty(), "{family:?} lacks glyphs:\n{}", listed.join("\n"));
+            }
         }
     }
 
@@ -772,10 +753,7 @@ mod tests {
     /// translation must not carry a symbol no installed font has (egui's defaults cover the rest).
     #[test]
     fn interface_symbols_are_paintable() {
-        let ctx = egui::Context::default();
-        ctx.set_fonts(crate::theme::font_definitions(lightcraft_engine::CRAFT_FONTS));
-        let mut out = ctx.run_ui(egui::RawInput::default(), |_| {});
-        out.textures_delta.clear();
+        let ctx = fonts_ctx(Locale::En);
         // ⌥ and ⌫ come from egui's bundled fonts; ▸ and ▾ are in neither (measured 2026-10-07).
         ctx.fonts_mut(|fonts| {
             for symbol in ['⌥', '⌫', '⇧', '⌘', '→', '…', '—', '“', '”', '·', '»', '⌄', '★'] {
@@ -1079,7 +1057,7 @@ mod tests {
 
     #[test]
     fn ukrainian_panels_dialogs_and_letters_paint_with_bundled_fonts() {
-        let ctx = fonts_ctx(&[]);
+        let ctx = bundled_fonts_ctx();
         let mut app = crate::LightcraftApp::new(lightcraft_engine::Session::with_demo(), Default::default());
         app.ui.left_panel = true;
         let text = painted_text(&ctx, &mut app, Locale::Uk);
@@ -1181,7 +1159,7 @@ mod tests {
 
     #[test]
     fn italian_panels_dialogs_and_letters_paint_with_bundled_fonts() {
-        let ctx = fonts_ctx(&[]);
+        let ctx = bundled_fonts_ctx();
         let mut app = crate::LightcraftApp::new(lightcraft_engine::Session::with_demo(), Default::default());
         app.ui.left_panel = true;
         let text = painted_text(&ctx, &mut app, Locale::It);
@@ -1323,7 +1301,7 @@ mod tests {
 
     #[test]
     fn german_panels_dialogs_and_glyphs_are_painted_without_extra_fonts() {
-        let ctx = fonts_ctx(&[]);
+        let ctx = bundled_fonts_ctx();
         let mut app = crate::LightcraftApp::new(lightcraft_engine::Session::with_demo(), Default::default());
         app.ui.left_panel = true;
         let text = painted_text(&ctx, &mut app, Locale::De);
@@ -1360,7 +1338,7 @@ mod tests {
             }
         }
         for language in [Locale::De, Locale::Uk, Locale::It] {
-            let ctx = fonts_ctx(&[]);
+            let ctx = bundled_fonts_ctx();
             let services = crate::Services { pick_folder: Some(Box::new(|| None)), ..Default::default() };
             let mut app = crate::LightcraftApp::new(lightcraft_engine::Session::with_demo(), services);
             app.ui.language = language;
@@ -1471,10 +1449,22 @@ mod tests {
         set_language(Locale::En);
     }
 
-    /// The UI families, after one frame so the font definitions are loaded.
-    fn fonts_ctx(craft: &'static [lightcraft_engine::CraftFont]) -> egui::Context {
+    /// Inter and egui's faces alone, as in a build without craft-fonts, after one frame so the
+    /// faces are loaded.
+    fn bundled_fonts_ctx() -> egui::Context {
         let ctx = egui::Context::default();
-        ctx.set_fonts(crate::theme::font_definitions(craft));
+        let fonts = crate::theme::ui_fonts(Locale::En, &[], craft_ui::fonts::Emoji::default());
+        fonts.system_fonts(craft_ui::fonts::SystemFonts::Off).stack().install(&ctx);
+        let mut out = ctx.run_ui(egui::RawInput::default(), |_| {});
+        out.textures_delta.clear();
+        ctx
+    }
+
+    /// The UI families for `language` without installed fonts, after one frame so the faces are
+    /// loaded.
+    fn fonts_ctx(language: Locale) -> egui::Context {
+        let ctx = egui::Context::default();
+        crate::theme::font_stack(language, craft_ui::fonts::SystemFonts::Off).install(&ctx);
         let mut out = ctx.run_ui(egui::RawInput::default(), |_| {});
         out.textures_delta.clear();
         ctx
@@ -1486,12 +1476,11 @@ mod tests {
     fn craft_fonts_render_cjk_in_the_ui() {
         let samples = [(Locale::Ja, "日本語の文字"), (Locale::ZhHans, "简体中文字"), (Locale::ZhHant, "繁體中文字")];
         for (language, sample) in samples {
-            if !lightcraft_engine::CRAFT_FONTS.iter().any(|font| font.serves(language.script())) {
-                lightcraft_testkit::skip!(Fonts, "{}: built without a craft-fonts face for {}", language.code(), language.script());
+            if crate::theme::craft_faces().is_empty() {
+                lightcraft_testkit::skip!(Fonts, "{}: built without craft-fonts faces for {}", language.code(), language.script());
                 continue;
             }
-            set_language(language);
-            let ctx = fonts_ctx(lightcraft_engine::CRAFT_FONTS);
+            let ctx = fonts_ctx(language);
             ctx.fonts_mut(|fonts| {
                 for family in
                     [egui::FontFamily::Proportional, egui::FontFamily::Name(crate::theme::FONT_SEMIBOLD.into()), egui::FontFamily::Monospace]
@@ -1513,7 +1502,7 @@ mod tests {
     /// Latin text keeps Inter.
     #[test]
     fn the_ui_works_without_craft_fonts() {
-        let ctx = fonts_ctx(&[]);
+        let ctx = bundled_fonts_ctx();
         ctx.fonts_mut(|fonts| {
             // (Not Monospace: egui's `has_glyph` reports false for glyphs of the family's
             // replacement-glyph face, which there is Hack, the face that draws Latin.)

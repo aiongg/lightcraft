@@ -20,9 +20,9 @@ macOS 的設定也可由「LightCraft → 設定…」或 `⌘,` 開啟。
 CRAFT_FONTS_DIR=../craft-fonts cargo run --release -p lightcraft
 ```
 
-craft-fonts 目前沒有繁體中文專用字型：桌面版先以 Noto Sans CJK SC 顯示繁中文字（字形為大陸規範寫法），其次才是日文字型；不在此儲存庫新增字型檔。
+介面以 craft-fonts 的 Noto Sans TC UI 顯示繁中文字（臺灣字形），建置時裁剪為翻譯目錄用到的字元；不在此儲存庫新增字型檔。
 未指定 `CRAFT_FONTS_DIR` 的建置缺少 CJK 字形。
-Web 建置在 WASM 中嵌入 BIZ UDPGothic Regular，並另外載入 Noto Sans CJK SC；繁中文字形仍採用簡中規範寫法。
+Web 建置同樣把裁剪後的 Noto Sans TC UI 嵌入 WASM。
 
 ## 自動化與維護
 

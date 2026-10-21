@@ -19,9 +19,9 @@ pub const MAX_CHARS: usize = 4000;
 /// serif look; then any other CJK face — drawn text has no UI language, so every CJK script is
 /// offered). Without craft-fonts that is Inter alone, and CJK characters draw as Inter's
 /// missing-glyph box.
-pub fn faces(craft: &'static [crate::fonts::CraftFont]) -> Vec<FontRef<'static>> {
+pub fn faces(craft: &'static [crate::fonts::EmbeddedFace]) -> Vec<FontRef<'static>> {
     let mut cjk: Vec<_> = crate::fonts::cjk(craft).collect();
-    cjk.sort_by_key(|f| !f.is_mincho());
+    cjk.sort_by_key(|f| !crate::fonts::is_mincho(f));
     std::iter::once(TEXT_FONT).chain(cjk.into_iter().map(|f| f.bytes)).filter_map(|bytes| FontRef::try_from_slice(bytes).ok()).collect()
 }
 
@@ -66,7 +66,7 @@ pub struct TextLayout {
 impl TextLayout {
     /// `text` (cut at [`MAX_CHARS`]) at `px` pixels a line; `None` when there is nothing to draw
     /// (empty text, a non-finite or non-positive size).
-    pub fn new(text: &str, px: f32, vertical: bool, craft: &'static [crate::fonts::CraftFont]) -> Option<TextLayout> {
+    pub fn new(text: &str, px: f32, vertical: bool, craft: &'static [crate::fonts::EmbeddedFace]) -> Option<TextLayout> {
         use unicode_segmentation::UnicodeSegmentation;
         if text.is_empty() || !px.is_finite() || px <= 0.0 {
             return None;

@@ -937,6 +937,8 @@ fn main() -> eframe::Result {
             // Wayland matches the window to packaging/linux/ai.storyteller.lightcraft.desktop by this id
             .with_app_id(APP_ID),
         wgpu_options,
+        // craft_ui's font stack looks up installed fonts itself (theme::install_fonts)
+        system_font_fallback: false,
         ..Default::default()
     };
     // the app's copy: `log_file` is still named in the message of a start that fails

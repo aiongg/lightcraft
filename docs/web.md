@@ -55,11 +55,12 @@ gzip size (5.25 MB). `wasm-opt -Oz`, when installed, shrinks it further.
 **Fonts.** The browser has no system fonts to fall back on, so CJK text comes from
 [craft-fonts](https://github.com/storytold/craft-fonts), the optional `CRAFT_FONTS_DIR` build
 input (`CRAFT_FONTS_DIR=../craft-fonts cargo xtask web`; release builds always set it). On wasm32
-`crates/engine/build.rs` embeds BIZ UDPGothic Regular (UI and watermark fallback) and Noto Sans
-Thai Regular (~214 KiB, for Thai file and folder names in every UI language). The web
-bundle also ships Noto Sans CJK SC Regular as `lightcraft_zh_hans.otf` and loads it before the UI
-starts. Keeping the 16 MB Chinese face separate leaves the module under Cloudflare's 25 MiB
-per-file limit (the older Japanese-only module measured 21.8 MB). Without `CRAFT_FONTS_DIR`, the
+`crates/ui-egui/build.rs` embeds craft-fonts' Japanese, Simplified and Traditional Chinese interface
+faces cut to the characters of the translation catalogs (about 2 MB together), Noto Sans Thai (Thai
+file and folder names in every UI language) and Noto Sans Georgian, and `crates/engine/build.rs` embeds
+BIZ UDPGothic Regular (~4.5 MB) for CJK watermarks; the module stays under Cloudflare's 25 MiB per-file
+limit. Han characters outside the catalogs, such as in keywords, have no embedded interface face on the
+web. Without `CRAFT_FONTS_DIR`, the
 web build still works, but Chinese and Japanese text lack glyphs.
 
 ## Deploying: headers

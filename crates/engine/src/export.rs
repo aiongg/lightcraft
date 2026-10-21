@@ -423,7 +423,7 @@ fn watermark_coverage(
     width: usize,
     height: usize,
     wm: &Watermark,
-    craft: &'static [crate::fonts::CraftFont],
+    craft: &'static [crate::fonts::EmbeddedFace],
     floor_scale: f32,
     mut blend_px: impl FnMut(usize, usize, f32, [u8; 3]),
 ) {
@@ -2634,9 +2634,7 @@ mod tests {
             let rect = font.outline_glyph(glyph).unwrap().px_bounds();
             assert!(rect.min.x > 50.0 && rect.max.y < 50.0, "{ch} in the upper right: {rect:?}");
         }
-        let craft = Box::leak(
-            vec![crate::fonts::CraftFont { family: entry.family, style: entry.style, scripts: entry.scripts, bytes: entry.bytes }].into_boxed_slice(),
-        );
+        let craft = Box::leak(vec![*entry].into_boxed_slice());
         let wm = Watermark {
             text: "、。".into(),
             vertical: true,

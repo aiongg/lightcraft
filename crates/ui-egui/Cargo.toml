@@ -27,6 +27,10 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
 
+# The font stack looks up installed fonts itself and draws the colour emoji face.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+craft-ui = { workspace = true, features = ["system_fonts", "color_fonts"] }
+
 [dev-dependencies]
 # tests record why they skip (`cargo xtask ci` lists the skips)
 lightcraft-testkit = { workspace = true }
@@ -36,6 +40,8 @@ lightcraft-codecs = { workspace = true }
 lightcraft-faces = { workspace = true }
 lightcraft-merge = { workspace = true }
 
+# build.rs also embeds the interface faces, the CJK ones cut to the catalogs' characters.
 [build-dependencies]
+craft-fonts-build = { workspace = true, features = ["subset"] }
 serde_json = { workspace = true }
 toml = "1"

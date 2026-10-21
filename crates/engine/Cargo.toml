@@ -11,6 +11,8 @@ workspace = true
 [dependencies]
 # Paths stored in a Lightroom catalog are followed only to local files or the catalog's share.
 craft-docpath = { workspace = true }
+# The document fonts' table (`fonts::CRAFT_FONTS`).
+craft-fonts-build = { workspace = true }
 lightcraft-geom = { workspace = true }
 lightcraft-color = { workspace = true }
 lightcraft-raster = { workspace = true }
@@ -52,6 +54,9 @@ lightcraft-fetch = { workspace = true }
 sam = ["dep:lightcraft-segment"]
 denoise = ["dep:lightcraft-denoise", "lightcraft-denoise/runtime", "lightcraft-gpu/denoise"]
 rawnind-model = ["denoise", "lightcraft-denoise/rawnind-model", "lightcraft-denoise-core/rawnind-model"]
+
+[build-dependencies]
+craft-fonts-build = { workspace = true }
 
 [dev-dependencies]
 # tests record why they skip (`cargo xtask ci` lists the skips)
