@@ -1699,8 +1699,10 @@ mod tests {
         assert!(drawn > 96, "the test needs more faces on screen than the usual budget, got {drawn}");
         // the pictures are made and kept, well beyond the old budget (a few demo photos share a scene, so two faces can share a
         // picture: the count is a little under the number of tiles)
+        // alone this takes a tenth of a second, but in the full suite the pictures wait behind every other test's work
+        // (the demo scenes share one process-wide pool) for over a minute; an evicting cache never gets there at all
         let started = Instant::now();
-        while h.app.renderer.variant_textures() < drawn - 20 && started.elapsed() < Duration::from_secs(60) {
+        while h.app.renderer.variant_textures() < drawn - 20 && started.elapsed() < Duration::from_secs(300) {
             h.step();
             std::thread::sleep(Duration::from_millis(20));
         }
