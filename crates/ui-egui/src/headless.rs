@@ -327,10 +327,7 @@ impl Headless {
         self.frames += 1;
         for c in commands {
             match c {
-                ViewportCommand::Screenshot(user_data) => {
-                    let image = Arc::new(self.paint());
-                    self.events.push(egui::Event::Screenshot { viewport_id: ViewportId::ROOT, user_data, image });
-                }
+                ViewportCommand::Screenshot(delivered) => delivered.complete(Arc::new(self.paint())),
                 ViewportCommand::InnerSize(size) => {
                     // Viewport commands use current egui points, which include UI zoom.
                     if let Ok(native_size) = resized_viewport([size.x, size.y], self.pixels_per_point, self.view.ctx.zoom_factor()) {
@@ -1458,7 +1455,7 @@ mod tests {
         assert_eq!(names(&h), vec![Some("Jane Doe".into()), None, None, None, None, None, Some("John Roe".into())]);
         // With no target A cannot name a face, even on this page.
         h.request("ui.move", json!({"x": 1, "y": 1}), t);
-        h.view.ctx.memory_mut(|m| m.surrender_focus(egui::Id::new(("more-face-above", ids[2].0, 0_usize))));
+        h.view.ctx.memory_mut(|m| m.surrender_focus(egui::Id::unique(("more-face-above", ids[2].0, 0_usize))));
         set_page(&mut h);
         h.request("ui.key", json!({"key": "a"}), t);
         h.step();
@@ -1486,7 +1483,7 @@ mod tests {
         h.request("ui.move", json!({"x": 1, "y": 1}), t);
         set_page(&mut h);
         // Keyboard focus on the candidate makes the same batch action available without hovering it.
-        h.view.ctx.memory_mut(|m| m.request_focus(egui::Id::new(("more-face", ids[2].0, 0_usize))));
+        h.view.ctx.memory_mut(|m| m.request_focus(egui::Id::unique(("more-face", ids[2].0, 0_usize))));
         h.request("ui.key", json!({"key": "a"}), t);
         h.step();
         assert_eq!(
@@ -4098,7 +4095,7 @@ mod tests {
         // Paint the edited template before locating the Tags button in the resized dialog.
         assert!(h.settle(SETTLE), "Copy dialog layout should settle before locating Tags");
         // the cursor sits after "Trip-"
-        let id = egui::Id::new("import-rename");
+        let id = egui::Id::unique("import-rename");
         let mut st = egui::text_edit::TextEditState::default();
         st.cursor.set_char_range(Some(egui::text::CCursorRange::one(egui::text::CCursor::new(5))));
         st.store(&h.view.ctx, id);
@@ -4135,7 +4132,7 @@ mod tests {
             let r = h.request("ui.clickWidget", json!({"id": format!("button:aboutTab-{tab}")}), t);
             assert_eq!(r["ok"], true, "{tab}: {r}");
             h.step();
-            let shown = h.view.ctx.data_mut(|d| d.get_temp::<u8>(egui::Id::new("about_tab")));
+            let shown = h.view.ctx.data_mut(|d| d.get_temp::<u8>(egui::Id::unique("about_tab")));
             assert_eq!(shown.map(usize::from), Some(i), "{tab}");
         }
         h.request("ui.clickWidget", json!({"id": "button:aboutTab-contributors"}), t);
@@ -4539,6 +4536,7 @@ mod tests {
                     unit: egui::MouseWheelUnit::Point,
                     delta: egui::vec2(10.0, -10.0),
                     phase: egui::TouchPhase::Move,
+                    source: egui::MouseWheelSource::Unknown,
                     modifiers: egui::Modifiers::NONE,
                 }),
                 None,
@@ -4617,7 +4615,13 @@ mod tests {
         ] {
             h.request("ui.set", json!({"zoom": "fit", "pan": [0.5, 0.5]}), t);
             h.request("ui.hoverWidget", json!({"id": "canvas:image"}), t);
-            h.app.synthetic.push(egui::Event::MouseWheel { unit, delta: egui::vec2(0.0, y), phase: egui::TouchPhase::Move, modifiers });
+            h.app.synthetic.push(egui::Event::MouseWheel {
+                unit,
+                delta: egui::vec2(0.0, y),
+                phase: egui::TouchPhase::Move,
+                source: egui::MouseWheelSource::Unknown,
+                modifiers,
+            });
             for _ in 0..10 {
                 h.step();
             }

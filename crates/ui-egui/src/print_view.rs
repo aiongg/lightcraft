@@ -677,7 +677,7 @@ fn package_cells(
         let photo = if st.layout.style == Style::CustomPackage { c.photo.map(PhotoId).or(first) } else { first };
         let rect = sheet.rect(&c.rect);
         paint_cell(app, painter, t, st, rect, photo, sheet, &c.rect);
-        let resp = ui.interact(rect, egui::Id::new(("print-cell", c.id)), Sense::click_and_drag());
+        let resp = ui.interact(rect, egui::Id::unique(("print-cell", c.id)), Sense::click_and_drag());
         register(&ctx, format!("print:cell:{}", c.id), rect);
         if resp.clicked() || resp.drag_started() {
             pu.selected = Some(c.id);
@@ -719,7 +719,7 @@ fn package_cells(
     painter.rect_stroke(rect, 0.0, Stroke::new(2.0, t.accent), StrokeKind::Outside);
     let handle = Rect::from_center_size(rect.right_bottom(), Vec2::splat(HANDLE));
     painter.rect_filled(handle, 2.0, t.accent);
-    let resp = ui.interact(handle, egui::Id::new(("print-resize", sel.id)), Sense::drag());
+    let resp = ui.interact(handle, egui::Id::unique(("print-resize", sel.id)), Sense::drag());
     register(&ctx, format!("print:resize:{}", sel.id), handle);
     if resp.drag_started() {
         pu.drag = Some(Drag { cell: sel.id, origin: sel.rect, resize: true, press: press_origin(ui, &resp), total: Vec2::ZERO });

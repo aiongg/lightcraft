@@ -315,7 +315,7 @@ fn import_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
         [("copyright", "Copyright", "© 2026 Your Name", d.copyright.clone()), ("creator", "Creator", "Your Name", d.creator.clone())]
     {
         row(ui, t, label, |ui| {
-            let id = egui::Id::new(("settingsMeta", key));
+            let id = egui::Id::unique(("settingsMeta", key));
             let mut text: String = ui.data(|m| m.get_temp(id)).unwrap_or(value.clone());
             let r = ui.add(egui::TextEdit::singleline(&mut text).hint_text(hint_text).desired_width(240.0));
             register(ui.ctx(), format!("field:settings.{key}"), r.rect);
@@ -396,7 +396,7 @@ fn import_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
                 }
             });
             row(ui, t, crate::i18n::tr("Album"), |ui| {
-                let id = egui::Id::new("auto-album");
+                let id = egui::Id::unique("auto-album");
                 let mut name = ui.data(|m| m.get_temp::<String>(id)).unwrap_or_else(|| d.auto_album.clone().unwrap_or_default());
                 let r = ui.add(egui::TextEdit::singleline(&mut name).hint_text(crate::i18n::tr("None")).desired_width(180.0));
                 if r.lost_focus() {
@@ -492,7 +492,7 @@ fn performance_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
 #[cfg(not(target_arch = "wasm32"))]
 fn smart_previews(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
     // listing a big folder every frame would be slow: refresh every 2 s and after a change
-    let cache = egui::Id::new("smart-location");
+    let cache = egui::Id::unique("smart-location");
     let now = ui.input(|i| i.time);
     let loc: Value = match ui.data(|d| d.get_temp::<(f64, Value)>(cache)) {
         Some((at, v)) if now - at < 2.0 => v,
@@ -535,7 +535,7 @@ fn smart_previews(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
         );
     }
     // what happens to the previews already built when the folder changes
-    let mode_id = egui::Id::new("smart-existing");
+    let mode_id = egui::Id::unique("smart-existing");
     let mut mode: u8 = ui.data(|d| d.get_temp(mode_id)).unwrap_or(0);
     if count > 0 {
         row(ui, t, crate::i18n::tr("Existing previews"), |ui| {
@@ -901,7 +901,7 @@ fn theme_card<V: PartialEq + Copy>(
                                 .on_hover_text(crate::i18n::tr(if favorite { "Remove from favorites" } else { "Add to favorites" }));
                             r.widget_info(|| {
                                 egui::WidgetInfo::labeled(
-                                    egui::WidgetType::Button,
+                                    egui::Role::Button,
                                     true,
                                     format!(
                                         "{}: {}",

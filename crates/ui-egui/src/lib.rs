@@ -372,6 +372,8 @@ pub struct LightcraftApp {
     pub quit_confirmed: bool,
     control_rx: Option<Receiver<ControlRequest>>,
     pending_screenshots: Vec<PendingShot>,
+    /// Window screenshots the compositor delivered (token, image), taken by `collect_screenshots`.
+    screenshot_inbox: std::sync::Arc<std::sync::Mutex<Vec<(u64, std::sync::Arc<egui::ColorImage>)>>>,
     screenshot_token: u64,
     /// Offscreen context for headless screenshots of the windowed app.
     shadow: Option<headless::HeadlessView>,
@@ -505,6 +507,7 @@ impl LightcraftApp {
             quit_confirmed: false,
             control_rx: None,
             pending_screenshots: vec![],
+            screenshot_inbox: Default::default(),
             screenshot_token: 0,
             shadow: None,
             synthetic: vec![],
@@ -962,7 +965,12 @@ impl LightcraftApp {
                 true
             } else {
                 if ready {
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(s.token)));
+                    let (inbox, repaint, token) = (self.screenshot_inbox.clone(), ctx.clone(), s.token);
+                    let delivered = egui::ScreenshotCallback::new(move |image| {
+                        inbox.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push((token, image));
+                        repaint.request_repaint();
+                    });
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(delivered));
                     s.sent_at = Some(now);
                 }
                 true
@@ -1020,23 +1028,11 @@ impl LightcraftApp {
         img
     }
 
-    fn collect_screenshots(&mut self, ctx: &egui::Context) {
+    fn collect_screenshots(&mut self) {
         if self.pending_screenshots.is_empty() {
             return;
         }
-        let events: Vec<_> = ctx.input(|i| {
-            i.raw
-                .events
-                .iter()
-                .filter_map(|e| match e {
-                    egui::Event::Screenshot { user_data, image, .. } => {
-                        let token = user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).copied()?;
-                        Some((token, image.clone()))
-                    }
-                    _ => None,
-                })
-                .collect()
-        });
+        let events = std::mem::take(&mut *self.screenshot_inbox.lock().unwrap_or_else(std::sync::PoisonError::into_inner));
         for (token, image) in events {
             if let Some(i) = self.pending_screenshots.iter().position(|s| s.token == token) {
                 let s = self.pending_screenshots.remove(i);
@@ -1216,7 +1212,7 @@ impl LightcraftApp {
         model_setup::pump(self, ctx);
         panels::faces::pump(self, ctx);
         focus_scan::pump(self, ctx);
-        self.collect_screenshots(ctx);
+        self.collect_screenshots();
         self.issue_screenshots(ctx);
         if self.fonts_ready {
             shortcuts::handle(self, ctx);
@@ -1375,7 +1371,7 @@ impl LightcraftApp {
         let screen = ctx.content_rect();
         let keep = if self.ui.view == state::ViewMode::Detail { self.image_rect.or(self.canvas_rect) } else { self.canvas_rect };
         let veil = egui::Color32::from_black_alpha((a.clamp(0.0, 1.0) * 255.0).round() as u8);
-        let p = ctx.layer_painter(egui::LayerId::new(egui::Order::Middle, egui::Id::new("lights-out")));
+        let p = ctx.layer_painter(egui::LayerId::new(egui::Order::Middle, egui::Id::unique("lights-out")));
         let k = keep.unwrap_or(egui::Rect::NOTHING).intersect(screen);
         if !k.is_positive() {
             p.rect_filled(screen, 0.0, veil);

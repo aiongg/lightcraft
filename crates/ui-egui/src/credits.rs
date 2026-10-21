@@ -229,7 +229,7 @@ fn name_link(app: &mut LightcraftApp, ui: &mut egui::Ui, c: &Contributor, names:
 /// About ▸ Contributors: a name toggle, a sort, and the list as a grab bag or a table.
 pub fn contributors_ui(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
-    let id = egui::Id::new("credits_view");
+    let id = egui::Id::unique("credits_view");
     let mut v = ui.data_mut(|d| d.get_temp::<View>(id)).unwrap_or_default();
     ui.horizontal_wrapped(|ui| {
         ui.label(crate::i18n::tr("Show"));
@@ -250,7 +250,7 @@ pub fn contributors_ui(app: &mut LightcraftApp, ui: &mut egui::Ui) {
         });
         let reverse =
             crate::widgets::arrow_button(ui, "", if v.ascending { crate::icons::Icon::ChevronUp } else { crate::icons::Icon::ChevronDown }, false);
-        reverse.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), crate::i18n::tr("Reverse the order")));
+        reverse.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, ui.is_enabled(), crate::i18n::tr("Reverse the order")));
         if reverse.on_hover_text(crate::i18n::tr("Reverse the order")).clicked() {
             v.ascending = !v.ascending;
         }

@@ -10,8 +10,8 @@ rust-version = "1.90"
 repository = "https://github.com/storytold/lightcraft"
 
 [workspace.dependencies]
-craft-ui = { git = "https://github.com/storytold/craft-libs", rev = "5c874d51eeb3de70e735c8ce87a59a7dedd47675", features = ["serde"] }
-craft-docpath = { version = "0.1.0", git = "https://github.com/storytold/craft-libs", rev = "82a24b006eefa036b43c09a67fb9a3fbd17ffe63" }
+craft-ui = { git = "https://github.com/aiongg/craft-libs", rev = "0554adcd61fe40252e9555e61c3c60b55b4c97ae", features = ["serde"] }
+craft-docpath = { version = "0.1.0", git = "https://github.com/aiongg/craft-libs", rev = "0554adcd61fe40252e9555e61c3c60b55b4c97ae" }
 # internal
 lightcraft-denoise-core = { path = "crates/denoise-core" }
 lightcraft-denoise = { path = "crates/denoise", default-features = false }
@@ -89,10 +89,10 @@ wgpu = { version = "30", default-features = false, features = ["std", "parking_l
 pollster = "1"
 
 # ui
-egui = "0.36"
-egui_extras = { version = "0.36", default-features = false }
-eframe = { version = "0.36", default-features = false }
-egui_kittest = "0.36"
+egui = "0.37"
+egui_extras = { version = "0.37", default-features = false }
+eframe = { version = "0.37", default-features = false }
+egui_kittest = "0.37"
 rfd = "0.17"
 muda = { version = "0.21", default-features = false } # native menu bar (macOS: objc2/AppKit, pure Rust; no GTK)
 # macOS: the profile of the screen showing the window (safe AppKit bindings; muda and wgpu use the same)
@@ -109,6 +109,20 @@ wasm-bindgen = "0.2.129"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = "0.3"
+
+# The suite's patched toolkit (bidi, IME and platform fixes on egui 0.37 / winit 0.30).
+[patch.crates-io]
+ecolor = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+eframe = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+egui = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+egui-wgpu = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+egui-winit = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+egui_glow = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+egui_kittest = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+emath = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+epaint = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+epaint_default_fonts = { git = "https://github.com/aiongg/egui", rev = "a7bc087cf46779732dd59f4c0c3391e7bc34593c" }
+winit = { git = "https://github.com/aiongg/winit", rev = "8b35388bd719e8cc86a95971ba0bc026c9a8f058" }
 
 [workspace.lints.rust]
 unsafe_code = "deny"

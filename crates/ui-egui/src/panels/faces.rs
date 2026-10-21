@@ -58,7 +58,7 @@ fn pace_for(focused: bool, minimized: bool, worked: f64, moved: f64, watching: b
 const REFRESH_SECS: f64 = 1.5;
 
 fn list_id() -> egui::Id {
-    egui::Id::new("faces-model-list")
+    egui::Id::unique("faces-model-list")
 }
 
 /// The engine's model list, re-read at most every [`REFRESH_SECS`], or at once after an action changed it.
@@ -642,7 +642,7 @@ pub fn name_editor(
     let t = Tokens::get(ctx);
     let mut outcome = Editor::Open;
     let opening = edit.fresh;
-    let shown = egui::Area::new(egui::Id::new("face-name-editor")).order(egui::Order::Foreground).fixed_pos(at).constrain(true).show(ctx, |ui| {
+    let shown = egui::Area::new(egui::Id::unique("face-name-editor")).order(egui::Order::Foreground).fixed_pos(at).constrain(true).show(ctx, |ui| {
         egui::Frame::popup(ui.style()).show(ui, |ui| {
             ui.set_min_width(230.0);
             let r = ui.add(egui::TextEdit::singleline(&mut edit.text).hint_text("Name").desired_width(220.0));

@@ -59,7 +59,7 @@ pub fn resizable_side(
     reserve: f32,
     add: impl FnOnce(&mut egui::Ui),
 ) -> Option<f32> {
-    let pid = egui::Id::new(id);
+    let pid = egui::Id::unique(id);
     ui.ctx().data_mut(|d| d.remove::<egui::containers::panel::PanelState>(pid));
     let avail = ui.available_rect_before_wrap();
     let max = (avail.width() - reserve - crate::state::MIN_PHOTO_WIDTH).clamp(limits.min, limits.max);
@@ -87,7 +87,7 @@ pub fn toast(app: &mut LightcraftApp, ctx: &egui::Context) {
     let Some(canvas) = app.canvas_rect else { return };
     let t = Tokens::get(ctx);
     let fade = ((until - now) / 0.25).clamp(0.0, 1.0) as f32;
-    let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("toast")));
+    let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::unique("toast")));
     // long messages (a save warning, the web build's notices) wrap within the canvas
     let wrap = (canvas.width() - 80.0).clamp(200.0, 720.0);
     let (background, foreground) = label.map(crate::theme::label_toast_colors).unwrap_or((egui::Color32::from_black_alpha(200), t.text));

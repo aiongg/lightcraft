@@ -9,7 +9,7 @@ use crate::icons::{Icon, paint};
 use crate::theme::Tokens;
 
 /// Standard dropdown chevrons, including settings, import/export and rule editors.
-pub fn combo_box(id: impl egui::AsIdSalt) -> egui::ComboBox {
+pub fn combo_box(id: impl egui::AsIdSalt) -> egui::ComboBox<'static> {
     egui::ComboBox::from_id_salt(id).icon(|ui, rect, visuals, _| {
         paint(ui.painter(), Rect::from_center_size(rect.center(), vec2(16.0, 16.0)), Icon::ChevronDown, visuals.fg_stroke.color);
     })
@@ -17,7 +17,7 @@ pub fn combo_box(id: impl egui::AsIdSalt) -> egui::ComboBox {
 
 /// A native button with a vector arrow beside its text; egui reserves the icon's space.
 pub fn arrow_button<'a>(ui: &mut Ui, text: impl egui::IntoAtoms<'a>, icon: Icon, leading: bool) -> Response {
-    let id = ui.next_auto_id().with("arrow");
+    let id = egui::IdSalt::new("arrow");
     let mut atoms = text.into_atoms();
     let arrow = egui::Atom::custom(id, vec2(16.0, 16.0));
     if leading {
@@ -52,23 +52,23 @@ pub struct Registry(pub Vec<(String, Rect)>);
 /// Record a widget's automation id and screen rect for this frame.
 pub fn register(ctx: &egui::Context, id: impl Into<String>, rect: Rect) {
     let id = id.into();
-    ctx.data_mut(|d| d.get_temp_mut_or_default::<Registry>(egui::Id::new("lc-registry")).0.push((id, rect)));
+    ctx.data_mut(|d| d.get_temp_mut_or_default::<Registry>(egui::Id::unique("lc-registry")).0.push((id, rect)));
 }
 
 /// Esc was handled this frame by something nested (an open popup closed on it): containers such
 /// as dialogs shouldn't close too. Keyed to the frame, so it lapses by itself on the next one.
 pub fn take_escape(ctx: &egui::Context) {
     let frame = ctx.cumulative_frame_nr();
-    ctx.data_mut(|d| d.insert_temp(egui::Id::new("lc-escape-taken"), frame));
+    ctx.data_mut(|d| d.insert_temp(egui::Id::unique("lc-escape-taken"), frame));
 }
 
 /// Whether [`take_escape`] was called this frame.
 pub fn escape_taken(ctx: &egui::Context) -> bool {
-    ctx.data(|d| d.get_temp::<u64>(egui::Id::new("lc-escape-taken"))) == Some(ctx.cumulative_frame_nr())
+    ctx.data(|d| d.get_temp::<u64>(egui::Id::unique("lc-escape-taken"))) == Some(ctx.cumulative_frame_nr())
 }
 
 pub fn take_registry(ctx: &egui::Context) -> Vec<(String, Rect)> {
-    ctx.data_mut(|d| std::mem::take(&mut d.get_temp_mut_or_default::<Registry>(egui::Id::new("lc-registry")).0))
+    ctx.data_mut(|d| std::mem::take(&mut d.get_temp_mut_or_default::<Registry>(egui::Id::unique("lc-registry")).0))
 }
 
 // ------------------------------------------------------------------ preview-only raws
@@ -119,7 +119,7 @@ pub fn preview_only_notice(ui: &mut Ui, key: &str, reason: &str) -> bool {
         })
         .response;
     let r = r.on_hover_text(crate::i18n::tr_format!("Decoder: {reason}", reason = reason));
-    r.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, crate::i18n::tr("Preview only: editing the camera's embedded JPEG")));
+    r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, crate::i18n::tr("Preview only: editing the camera's embedded JPEG")));
     register(ui.ctx(), format!("notice:previewOnly:{key}"), r.rect);
     reload
 }
@@ -238,7 +238,7 @@ pub fn slider(ui: &mut Ui, spec: &ControlSpec, value: f64, enabled: bool, label_
     let pad_r = 22.0;
     let label_rect = Rect::from_min_size(pos2(row.left() + pad_l, row.top() + 4.0), vec2(w - pad_l - pad_r, 18.0));
     let track_rect = Rect::from_min_max(pos2(row.left() + pad_l, row.top() + 22.0), pos2(row.right() - pad_r, row.top() + 40.0));
-    let id = ui.id().with(spec.id);
+    let id = ui.scope_id().with(spec.id);
     let resp = ui.interact(track_rect.expand2(vec2(8.0, 2.0)), id, if enabled { Sense::click_and_drag() } else { Sense::hover() });
     // A click selects the slider for arrow/wheel adjustments. Keep scroll-to-adjust
     // opt-in so hovering an unfocused slider still scrolls the containing panel.
@@ -570,7 +570,7 @@ pub fn section_header(ui: &mut Ui, id: &str, title: &str, open: bool, enabled: O
     let t = Tokens::get(ui.ctx());
     let w = ui.available_width();
     let (r, resp) = ui.allocate_exact_size(vec2(w, 52.0), Sense::click());
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::CollapsingHeader, true, open, title));
+    resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::DisclosureTriangle, true, open, title));
     register(ui.ctx(), format!("section:{id}"), r);
     let p = ui.painter();
     if ui.rect_contains_pointer(r) {
@@ -587,7 +587,7 @@ pub fn section_header(ui: &mut Ui, id: &str, title: &str, open: bool, enabled: O
         && (ui.rect_contains_pointer(r) || !on)
     {
         let eye = Rect::from_center_size(pos2(r.right() - 34.0, r.center().y), vec2(18.0, 18.0));
-        let er = ui.interact(eye, ui.id().with(("eye", id)), Sense::click());
+        let er = ui.interact(eye, ui.scope_id().with(("eye", id)), Sense::click());
         crate::widgets::announce_selected(&er, crate::i18n::tr("Show / hide"), on);
         register(ui.ctx(), format!("sectionEye:{id}"), eye);
         paint(ui.painter(), eye, Icon::Eye, if on { t.icon } else { t.text_disabled });
@@ -616,8 +616,8 @@ pub fn flyout_row(ui: &mut Ui, id: &str, title: &str, icon: Icon, open: bool) ->
     let w = ui.available_width();
     let (outer, _) = ui.allocate_exact_size(vec2(w, 40.0), Sense::hover());
     let r = Rect::from_min_max(pos2(outer.left() + 16.0, outer.top() + 4.0), pos2(outer.right() - 16.0, outer.bottom() - 4.0));
-    let resp = ui.interact(r, ui.id().with(("flyout", id)), Sense::click());
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::CollapsingHeader, true, open, title));
+    let resp = ui.interact(r, ui.scope_id().with(("flyout", id)), Sense::click());
+    resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::DisclosureTriangle, true, open, title));
     register(ui.ctx(), format!("flyout:{id}"), r);
     let p = ui.painter();
     p.rect_filled(r, 4.0, if resp.hovered() { t.hover.gamma_multiply(0.8) } else { t.inset });
@@ -642,7 +642,7 @@ pub fn text_button(ui: &mut Ui, id: &str, label: &str, active: bool) -> Response
     let galley = ui.painter().layout_no_wrap(label.to_string(), font, t.text);
     let size = vec2((galley.size().x + 18.0).max(37.0), 24.0);
     let (r, resp) = ui.allocate_exact_size(size, Sense::click());
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, active, label));
+    resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, true, active, label));
     register(ui.ctx(), format!("button:{id}"), r);
     let fill = if active {
         t.pressed
@@ -699,7 +699,7 @@ pub fn icon_button(ui: &mut Ui, id: &str, icon: Icon, size: egui::Vec2, active: 
     let tooltip = crate::i18n::tr(tooltip);
     let t = Tokens::get(ui.ctx());
     let (r, resp) = ui.allocate_exact_size(size, if enabled { Sense::click() } else { Sense::hover() });
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, enabled, active, tooltip));
+    resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, enabled, active, tooltip));
     register(ui.ctx(), format!("icon:{id}"), r);
     let p = ui.painter();
     let sq = Rect::from_center_size(r.center(), vec2(32.0f32.min(size.x), 32.0f32.min(size.y)));
@@ -770,7 +770,7 @@ pub fn dropdown_within(ui: &mut Ui, id: &str, text: &str, font: egui::FontId, co
     let elided = galley.elided;
     let size = vec2(galley.size().x + 20.0, galley.size().y.max(20.0));
     let (r, resp) = ui.allocate_exact_size(size, Sense::click());
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::ComboBox, true, text));
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::ComboBox, true, text));
     register(ui.ctx(), format!("dropdown:{id}"), r);
     let c = if resp.hovered() { t.text } else { color };
     ui.painter().galley(pos2(r.left(), r.center().y - galley.size().y / 2.0), galley, c);
@@ -950,13 +950,13 @@ pub(crate) fn screen_reader_name(ctx: &egui::Context, id: egui::Id, name: &str) 
 /// A hand-drawn clickable area (an icon, a tile, a row) announced as a button named `name`.
 pub(crate) fn announce(resp: &egui::Response, name: impl Into<String>) {
     let name = name.into();
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, resp.enabled(), name.clone()));
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, resp.enabled(), name.clone()));
 }
 
 /// The same for one that is on or off (a toggle, a selected row or swatch).
 pub(crate) fn announce_selected(resp: &egui::Response, name: impl Into<String>, selected: bool) {
     let name = name.into();
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, resp.enabled(), selected, name.clone()));
+    resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, resp.enabled(), selected, name.clone()));
 }
 
 /// `r`, named `name` for screen readers: a plain egui field or slider whose caption is drawn
@@ -1010,7 +1010,7 @@ mod numeric_entry_tests;
 mod slider_reset_tests;
 
 fn focused_slider_key() -> egui::Id {
-    egui::Id::new("lightcraft-focused-slider")
+    egui::Id::unique("lightcraft-focused-slider")
 }
 
 /// Whether the widget with keyboard focus is a develop slider a click selected. It owns only the

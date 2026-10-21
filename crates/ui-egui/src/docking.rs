@@ -367,7 +367,7 @@ pub(crate) fn cancel_replaced_gesture(app: &crate::LightcraftApp, workspace: Opt
         _ => true,
     };
     if replaced && let Some(ctx) = &app.tasks.repaint {
-        craft_ui::docking::cancel_drag::<Panel>(ctx, egui::Id::new("lightcraft-docking"));
+        craft_ui::docking::cancel_drag::<Panel>(ctx, egui::Id::unique("lightcraft-docking"));
     }
 }
 
@@ -424,7 +424,7 @@ pub fn show(app: &mut crate::LightcraftApp, ui: &mut egui::Ui) {
     style.font = t.font(12.0);
     // Tool and preset panels publish hover previews before the photo consumes them.
     let mut canvas = None;
-    let output = DockArea::new(egui::Id::new("lightcraft-docking")).show_with_limits(
+    let output = DockArea::new(egui::Id::unique("lightcraft-docking")).show_with_limits(
         ui,
         &workspace.layout,
         &style,
@@ -473,7 +473,7 @@ pub fn show(app: &mut crate::LightcraftApp, ui: &mut egui::Ui) {
     let _ = sync(&mut workspace, app);
     let stale = workspace.layout != rendered.layout || workspace.hidden != rendered.hidden;
     if stale {
-        craft_ui::docking::cancel_drag::<Panel>(ui.ctx(), egui::Id::new("lightcraft-docking"));
+        craft_ui::docking::cancel_drag::<Panel>(ui.ctx(), egui::Id::unique("lightcraft-docking"));
     }
     publish_visibility(app, &workspace);
     app.ui.docking = Some(workspace);
