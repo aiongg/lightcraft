@@ -356,8 +356,16 @@ pub fn slider(ui: &mut Ui, spec: &ControlSpec, value: f64, enabled: bool, label_
         // egui gives that release's click to the readout, so the field under it gives up the focus
         // whatever frame it lands on (issue #1362): the field takes it back after drawing too.
         let opening_release = pressed && value_released;
-        if opening_release {
+        // an Esc in the same frame has already taken the focus away: the edit ends there
+        if opening_release && !ui.input(|i| i.key_pressed(egui::Key::Escape)) {
             ui.memory_mut(|m| m.request_focus(crate::text_field::id(&format!("sliderField:{}", spec.id))));
+        }
+        // The readout is the only hovered widget on the frame its click lands, so egui would take the
+        // focus from the field as the field is created, before it reads the keys and text of that
+        // frame: a value typed and confirmed with the release would be lost.
+        let surrender_on = ui.ctx().options(|o| o.input_options.surrender_focus_on);
+        if opening_release {
+            ui.ctx().options_mut(|o| o.input_options.surrender_focus_on = egui::SurrenderFocusOn::Never);
         }
         let pressed = pressed && !value_released;
         // a child over the value, so the field never moves the rows around it
@@ -371,6 +379,9 @@ pub fn slider(ui: &mut Ui, spec: &ControlSpec, value: f64, enabled: bool, label_
             .select_on_focus(true)
             .begin_edit(frames == 0)
             .show(&mut child);
+        if opening_release {
+            ui.ctx().options_mut(|o| o.input_options.surrender_focus_on = surrender_on);
+        }
         if (frames < 2 || opening_release) && !matches!(field.ending, Some(crate::text_field::Ending::Return | crate::text_field::Ending::Escape)) {
             field.response.request_focus();
             let frames = frames.saturating_add(1);
