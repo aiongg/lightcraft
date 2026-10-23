@@ -36,8 +36,8 @@ commands:
                   --serve serves it on http://127.0.0.1:<port> (default 8080)
   ci [--hardware] [--summary-md]
                   fmt --check, clippy -D warnings, heif, test, GPU probe, parity refs, layers, assets, wasm
-                  (stops at first failure). Tests run under cargo nextest when it is installed (else
-                  cargo test), without examples, then doctests with cargo test --doc. Writes
+                  (stops at first failure). Tests run under cargo test (cargo nextest with
+                  LIGHTCRAFT_NEXTEST=1), without examples, then doctests with cargo test --doc. Writes
                   target/ci/report.json (machine, GPU adapters, data,
                   steps, skipped tests) and target/ci/summary.md; --hardware also runs the GPU tests on
                   every backend with a hardware adapter; --summary-md prints the Markdown summary
@@ -198,11 +198,17 @@ fn with_test_targets<'a>(args: &[&'a str]) -> Vec<&'a str> {
     args.iter().copied().chain(TEST_TARGETS).collect()
 }
 
-/// Whether `cargo nextest` is installed. Without it the tests run under `cargo test`, after a
-/// one-line notice.
+/// Whether the tests run under `cargo nextest`: only when `LIGHTCRAFT_NEXTEST=1` asks for it and
+/// nextest is installed. `cargo test` is the default because the demo library's generated scenes
+/// are cached per process: libtest runs a binary's tests in one process and generates each scene
+/// once, while nextest's process per test regenerates them (measured: the ui-egui tests take about
+/// 30 min under nextest, under 5 min under cargo test).
 fn nextest() -> bool {
     static FOUND: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *FOUND.get_or_init(|| {
+        if std::env::var_os("LIGHTCRAFT_NEXTEST").is_none_or(|v| v != "1") {
+            return false;
+        }
         let found = cargo()
             .args(["nextest", "--version"])
             .stdout(std::process::Stdio::null())
@@ -210,14 +216,14 @@ fn nextest() -> bool {
             .status()
             .is_ok_and(|s| s.success());
         if !found {
-            eprintln!("note: cargo-nextest is not installed, so the tests run under cargo test (cargo install cargo-nextest --locked)");
+            eprintln!("note: LIGHTCRAFT_NEXTEST=1 but cargo-nextest is not installed, so the tests run under cargo test (cargo install cargo-nextest --locked)");
         }
         found
     })
 }
 
 /// A test run of `args` (packages, features, targets, filters): `cargo nextest run`, or `cargo
-/// test` without nextest. The command and how to print it.
+/// test`. The command and how to print it.
 fn tests(args: &[&str]) -> (Command, String) {
     let mut c = cargo();
     let tool = if nextest() { "nextest run" } else { "test" };
