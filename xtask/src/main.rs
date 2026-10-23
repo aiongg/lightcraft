@@ -440,11 +440,12 @@ fn cmd_ci(args: &[&str]) -> Result<(), String> {
 }
 
 /// Run the ignored `gpu_probe` test of lightcraft-gpu: the pipeline's device (`None`) or one
-/// backend's adapters. `--workspace`, like the test step, so its build is reused. Its stdout, or why
+/// backend's adapters. `--workspace`, like the test step, so its build is reused (every crate's `it`
+/// binary starts; only lightcraft-gpu's has the test). Its stdout, or why
 /// it failed (a driver that crashes while it is enumerated, issue #136, ends up here, not in xtask).
 fn probe_gpu(backend: Option<&str>) -> Result<String, String> {
     let mut c = cargo();
-    c.args(["test", "-q", "--workspace", "--test", "gpu_probe", "--", "--ignored", "--exact", "gpu_probe", "--nocapture"]);
+    c.args(["test", "-q", "--workspace", "--test", "it", "--", "--ignored", "--exact", "gpu_probe::gpu_probe", "--nocapture"]);
     c.env("LIGHTCRAFT_GPU_PROBE", backend.unwrap_or(""));
     let out = c.output().map_err(|e| format!("gpu_probe: {e}"))?;
     if !out.status.success() {
