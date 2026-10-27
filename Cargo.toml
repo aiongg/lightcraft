@@ -10,10 +10,10 @@ rust-version = "1.95"
 repository = "https://github.com/storytold/lightcraft"
 
 [workspace.dependencies]
-craft-ui = { git = "https://github.com/aiongg/craft-libs", rev = "62bb0e1d5611d9345bf3e2aafd237a909801cad6", features = ["serde"] }
-craft-docpath = { version = "0.1.0", git = "https://github.com/aiongg/craft-libs", rev = "62bb0e1d5611d9345bf3e2aafd237a909801cad6" }
-craft-update = { git = "https://github.com/aiongg/craft-libs", version = "=0.1.0", rev = "62bb0e1d5611d9345bf3e2aafd237a909801cad6", features = ["egui"] }
-craft-window = { git = "https://github.com/aiongg/craft-libs", rev = "62bb0e1d5611d9345bf3e2aafd237a909801cad6", features = ["egui"] }
+craft-ui = { git = "https://github.com/aiongg/craft-libs", rev = "60d60d484db91911c63534df66aecdee016007f0", features = ["serde"] }
+craft-docpath = { version = "0.1.0", git = "https://github.com/aiongg/craft-libs", rev = "60d60d484db91911c63534df66aecdee016007f0" }
+craft-update = { git = "https://github.com/aiongg/craft-libs", version = "=0.1.0", rev = "60d60d484db91911c63534df66aecdee016007f0", features = ["egui"] }
+craft-window = { git = "https://github.com/aiongg/craft-libs", rev = "60d60d484db91911c63534df66aecdee016007f0", features = ["egui"] }
 # internal
 lightcraft-denoise-core = { path = "crates/denoise-core" }
 lightcraft-denoise = { path = "crates/denoise", default-features = false }
